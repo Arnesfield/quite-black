@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+# get version from manifest
+version=$(cat manifest.json | grep -oP '(?<="version": ")[^"]*')
+
+# output .xpi file
+zip quite-black-$version.xpi manifest.json

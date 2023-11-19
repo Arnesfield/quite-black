@@ -1,10 +1,8 @@
 {
   "manifest_version": 2,
-  "version": "1.0",
+  "version": "1.0.1",
   "name": "Quite Black",
   "theme": {
-    "images": {},
-    "properties": {},
     "colors": {
       "toolbar": "rgb(0, 0, 0)",
       "toolbar_text": "rgb(255, 255, 255)",
@@ -39,7 +37,6 @@
       "toolbar_field_focus": "rgb(0, 0, 0)",
       "toolbar_field_highlight_text": "rgb(255, 255, 255)",
       "toolbar_field_highlight": "rgb(63, 63, 63)",
-      "toolbar_field_separator": "rgb(127, 127, 127)",
       "toolbar_field_text_focus": "rgb(255, 255, 255)",
       "toolbar_top_separator": "rgb(0, 0, 0)",
       "toolbar_vertical_separator": "rgb(127, 127, 127)"

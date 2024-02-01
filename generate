@@ -1,7 +1,10 @@
 #!/usr/bin/env sh
 
+firefox_manifest=./firefox/manifest.json
+
 # get version from manifest
-version=$(cat manifest.json | grep -oP '(?<="version": ")[^"]*')
+version=$(cat "$firefox_manifest" | grep -oP '(?<="version": ")[^"]*')
 
 # output .xpi file
-zip quite-black-$version.xpi manifest.json
+mkdir -p dist
+zip dist/quite-black-$version.xpi "$firefox_manifest"

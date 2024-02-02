@@ -1,10 +1,21 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-firefox_manifest=./firefox/manifest.json
-
-# get version from manifest
-version=$(cat "$firefox_manifest" | grep -oP '(?<="version": ")[^"]*')
-
-# output .xpi file
+# ensure dist dir exists
 mkdir -p dist
-zip dist/quite-black-$version.xpi "$firefox_manifest"
+
+function generate() {
+  browser=$1
+  ext=$2
+  # get version from manifest
+  version=$(cat "$browser/manifest.json" | grep -oP '(?<="version": ")[^"]*')
+  # get file name, remove existing
+  file="dist/quite-black-$version.$ext"
+  if [ -f "$file" ]; then
+    rm "$file"
+  fi
+  # create theme extension
+  zip -j "$file" "$browser/manifest.json" "${@:3}"
+}
+
+generate chrome zip LICENSE
+generate firefox xpi LICENSE

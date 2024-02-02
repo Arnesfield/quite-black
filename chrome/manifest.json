@@ -1,25 +1,31 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "version": "1.0.1",
   "name": "Quite Black",
   "theme": {
     "colors": {
+      "background_tab": [32, 33, 36],
+      "background_tab_inactive": [24, 25, 30],
+      "background_tab_incognito": [32, 33, 36],
+      "background_tab_incognito_inactive": [24, 25, 30],
       "bookmark_text": [255, 255, 255],
-      "button_background": [0, 0, 0, 1],
-      "frame": [32, 33, 36],
-      "frame_inactive": [21, 22, 25],
+      "frame": [0, 0, 0],
+      "frame_inactive": [0, 0, 0],
+      "frame_incognito": [0, 0, 0],
+      "frame_incognito_inactive": [0, 0, 0],
       "ntp_background": [0, 0, 0],
       "ntp_link": [255, 255, 255],
       "ntp_text": [255, 255, 255],
       "omnibox_background": [0, 0, 0],
-      "omnibox_expanded_background": [0, 0, 0],
       "omnibox_text": [255, 255, 255],
-      "tab_background_text": [255, 255, 255],
+      "tab_background_text": [227, 227, 227],
+      "tab_background_text_inactive": [196, 199, 197],
+      "tab_background_text_incognito": [227, 227, 227],
+      "tab_background_text_incognito_inactive": [196, 199, 197],
       "tab_text": [255, 255, 255],
-      "toolbar": [0, 0, 0]
-    },
-    "tints": {
-      "buttons": [0, 0, 1]
+      "toolbar": [0, 0, 0],
+      "toolbar_button_icon": [255, 255, 255],
+      "toolbar_text": [255, 255, 255]
     }
   }
 }

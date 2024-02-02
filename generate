@@ -3,6 +3,10 @@
 # ensure dist dir exists
 mkdir -p dist
 
+if [ $1 -eq '0' ]; then
+  rm dist/*
+fi
+
 function generate() {
   browser=$1
   ext=$2

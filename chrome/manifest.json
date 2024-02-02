@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
-  "version": "1.0.1",
   "name": "Quite Black",
+  "version": "1.0.0",
+  "description": "Dark and minimalist theme that is quite black.",
   "theme": {
     "colors": {
       "background_tab": [32, 33, 36],

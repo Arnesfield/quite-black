@@ -1,25 +1,102 @@
 #!/usr/bin/env bash
 
+print_help() {
+  echo "usage: generate <chrome|firefox> [-n|--dry-run]"
+}
+
+if [ $# -eq 0 ]; then
+  print_help
+  exit 1
+fi
+
+script_name="${0##*/}"
+
+error() {
+  echo 1>&2 "[$script_name] error: $1"
+  exit "${2:-1}"
+}
+
+dry_run=
+all_themes=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  -h | --help)
+    print_help
+    exit
+    ;;
+  -n | --dry-run)
+    dry_run=1
+    shift
+    ;;
+  chrome | firefox)
+    all_themes+=("$1")
+    shift
+    ;;
+  -*) error "unknown option: $1" ;;
+  *) error "unknown argument: $1" ;;
+  esac
+done
+
+# get unique themes
+themes=()
+declare -A seen_themes
+
+for theme in "${all_themes[@]}"; do
+  if [ -z "${seen_themes[$theme]}" ]; then
+    themes+=("$theme")
+    seen_themes["$theme"]=1
+  fi
+done
+
+if [ ${#themes[@]} -eq 0 ]; then
+  echo 1>&2 "error: no themes provided"
+  echo
+  print_help
+  exit 1
+fi
+
+archive_bin="./scripts/archive"
+[ ! -x "$archive_bin" ] && error "not an executable file: $archive_bin"
+
 # ensure dist dir exists
 mkdir -p dist
 
-if [ $1 -eq '0' ]; then
-  rm dist/*
-fi
+i=1
+exit_code=0
+archive_args=()
+[ -n "$dry_run" ] && archive_args+=("--dry-run")
+files=("LICENSE")
 
-function generate() {
-  browser=$1
-  ext=$2
-  # get version from manifest
-  version=$(cat "$browser/manifest.json" | grep -oP '(?<="version": ")[^"]*')
-  # get file name, remove existing
-  file="dist/quite-black-$version.$ext"
-  if [ -f "$file" ]; then
-    rm "$file"
-  fi
-  # create theme extension
-  zip -j "$file" "$browser/manifest.json" "${@:3}"
-}
+for arg in "${themes[@]}"; do
+  case "$arg" in
+  chrome)
+    "$archive_bin" \
+      --name chrome \
+      --theme-dir chrome/quite-black \
+      --output dist/chrome-quite-black-__VERSION__.zip \
+      "${archive_args[@]}" \
+      -- "${files[@]}"
+    ;;
+  firefox)
+    "$archive_bin" \
+      --name firefox \
+      --theme-dir firefox \
+      --output dist/firefox-quite-black-__VERSION__.xpi \
+      "${archive_args[@]}" \
+      -- "${files[@]}"
+    ;;
+  *) error "unknown argument: $arg" ;;
+  esac
 
-generate chrome zip LICENSE
-generate firefox xpi LICENSE
+  # get the last non-zero exit code
+  code=$?
+  [ $code -ne 0 ] && exit_code=$code
+
+  # show separator if not the last argument
+  [ $i -lt ${#themes[@]} ] && echo
+
+  i=$((i + 1))
+done
+
+exit $exit_code

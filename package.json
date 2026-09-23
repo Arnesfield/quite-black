@@ -1,0 +1,19 @@
+{
+  "name": "quite-black",
+  "version": "0.0.0",
+  "description": "Dark and minimalist theme that is quite black.",
+  "homepage": "https://github.com/Arnesfield/quite-black#readme",
+  "bugs": {
+    "url": "https://github.com/Arnesfield/quite-black/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Arnesfield/quite-black.git"
+  },
+  "license": "MIT",
+  "author": "Jefferson Rylee <rylee.jeff385@gmail.com>",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

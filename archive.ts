@@ -13,6 +13,9 @@ declare module 'archiver' {
 interface Manifest {
   name: string;
   version: string;
+  theme?: {
+    images?: { [key: string]: string };
+  };
 }
 
 interface ArchiveFile {
@@ -23,54 +26,94 @@ interface ArchiveFile {
 interface ArchiveOptions {
   key: string;
   rootDir: string;
-  outputFile: string;
-  files: (string | ArchiveFile)[];
+  files?: (string | ArchiveFile)[];
+  outputFile: string | ((manifest: Manifest) => string);
+}
+
+function toArchiveFile(rootDir: string, archivePath: string): ArchiveFile {
+  rootDir = path.resolve(rootDir);
+  const archiveAbsPath = path.resolve(rootDir, archivePath);
+
+  return {
+    path: path.relative(process.cwd(), archiveAbsPath),
+    archivePath: path.relative(rootDir, archiveAbsPath),
+  };
 }
 
 async function archive(dryRun: boolean, options: ArchiveOptions) {
   const { key, rootDir } = options;
 
-  const prefix = `[${key}]` + (dryRun ? ' [dry-run]' : '');
-
-  const manifestFileName = 'manifest.json';
-  const manifestFilePath = path.join(rootDir, manifestFileName);
-  const manifestString = await fs.promises.readFile(manifestFilePath, 'utf8');
-  const manifest: Manifest = JSON.parse(manifestString);
-  if (typeof manifest.version !== 'string') {
-    throw new Error(`${prefix} unable to parse ${manifestFileName} version`);
+  const rootDirStats = await fs.promises.stat(rootDir);
+  if (!rootDirStats.isDirectory()) {
+    throw new Error(`not a directory: ${rootDir}`);
   }
 
-  const outputFile = options.outputFile.replaceAll(
-    '__VERSION__',
-    manifest.version,
-  );
+  const prefix = `[${key}]` + (dryRun ? ' [dry-run]' : '');
 
-  const files = options.files.map((file): ArchiveFile => {
-    return typeof file === 'string'
-      ? { path: path.join(rootDir, file), archivePath: file }
-      : file;
-  });
+  const manifestFile = toArchiveFile(rootDir, 'manifest.json');
+  const manifestString = await fs.promises.readFile(manifestFile.path, 'utf8');
+  const manifest: Manifest = JSON.parse(manifestString);
 
-  const infoList = [
-    { key: 'key', value: key },
-    { key: 'name', value: manifest.name || '?' },
-    { key: 'directory', value: rootDir },
-    { key: 'version', value: manifest.version },
-    { key: 'output file', value: outputFile },
-    {
-      key: `files (${files.length})`,
-      value: files.map((file) => file.path).join(' '),
-    },
-  ];
+  if (typeof manifest.version !== 'string') {
+    throw new Error(
+      `${prefix} unable to parse ${manifestFile.archivePath} version`,
+    );
+  }
+
+  const outputFile =
+    typeof options.outputFile === 'function'
+      ? options.outputFile(manifest)
+      : options.outputFile;
+
+  // get files to be included in the archive
+  const filePaths = options.files?.slice() || [];
+  filePaths.push(manifestFile);
+
+  if (
+    typeof manifest.theme?.images === 'object' &&
+    manifest.theme.images !== null &&
+    !Array.isArray(manifest.theme.images)
+  ) {
+    // trust that these are strings
+    filePaths.push(...Object.values(manifest.theme.images));
+  }
+
+  // ensure unique files
+  const files: ArchiveFile[] = [];
+  const fileMap: {
+    [archivePath: string]: ArchiveFile | null | undefined;
+  } = { __proto__: null };
+
+  for (const file of filePaths) {
+    const archiveFile =
+      typeof file === 'string' ? toArchiveFile(rootDir, file) : file;
+
+    if (!fileMap[archiveFile.archivePath]) {
+      fileMap[archiveFile.archivePath] = archiveFile;
+      files.push(archiveFile);
+    }
+  }
+
+  const filesLengthLength = files.length.toString().length;
+
+  const themeInfo = {
+    __proto__: null,
+    key,
+    name: manifest.name || '?',
+    directory: rootDir,
+    version: manifest.version,
+    'output file': outputFile,
+    [`files (${files.length})`]: files.map((file) => file.path).join(' '),
+  };
 
   let pad = 0;
-  for (const info of infoList) {
-    pad = Math.max(info.key.length, pad);
+  for (const infoKey in themeInfo) {
+    pad = Math.max(infoKey.length, pad);
   }
 
   console.log('%s theme info:', prefix);
-  for (const info of infoList) {
-    console.log('  %s : %s', info.key.padEnd(pad, ' '), info.value);
+  for (const infoKey in themeInfo) {
+    console.log('  %s : %s', infoKey.padEnd(pad, ' '), themeInfo[infoKey]);
   }
 
   try {
@@ -93,7 +136,7 @@ async function archive(dryRun: boolean, options: ArchiveOptions) {
 
   const archive = new ZipArchive();
 
-  const promise = new Promise<void>((resolve, reject) => {
+  const streamClosePromise = new Promise<void>((resolve, reject) => {
     outputStream.on('error', reject);
     outputStream.on('close', () => {
       console.log(
@@ -117,7 +160,10 @@ async function archive(dryRun: boolean, options: ArchiveOptions) {
   });
 
   archive.on('entry', (entry) => {
-    const entryInfo = [];
+    const nth = entry.index != null ? (entry.index + 1).toString() : '?';
+    const nthLabel = nth.padStart(filesLengthLength, ' ');
+
+    const entryInfo: string[] = [];
     if (entry.stats) {
       entryInfo.push(entry.stats.size.toLocaleString() + ' B');
     }
@@ -127,20 +173,18 @@ async function archive(dryRun: boolean, options: ArchiveOptions) {
 
     const entryLabel = entryInfo.length > 0 ? ` (${entryInfo.join(', ')})` : '';
 
-    const nth = entry.index != null ? (entry.index + 1).toString() : '?';
-
     console.log(
       '  [%s] %s: %s%s',
-      nth.padStart(files.length.toString().length, ' '),
+      nthLabel,
       entry.type || 'entry',
       entry.name,
       entryLabel,
     );
   });
 
-  archive.pipe(outputStream);
-
   console.log('%s creating zip archive: %s', prefix, outputFile);
+
+  archive.pipe(outputStream);
 
   for (let index = 0; index < files.length; index++) {
     const file = files[index];
@@ -148,7 +192,7 @@ async function archive(dryRun: boolean, options: ArchiveOptions) {
   }
 
   await archive.finalize();
-  await promise;
+  await streamClosePromise;
 }
 
 function getHelpText() {
@@ -163,24 +207,30 @@ async function main(): Promise<number | void> {
     return 1;
   }
 
-  const licenseFile: ArchiveFile = { path: 'LICENSE', archivePath: 'LICENSE' };
+  const licenseFile = toArchiveFile('.', 'LICENSE');
   const chrome: ArchiveOptions = {
     key: 'chrome',
     rootDir: 'chrome/quite-black',
-    outputFile: 'dist/chrome-quite-black-__VERSION__.zip',
-    files: [licenseFile, 'manifest.json'],
+    files: [licenseFile],
+    outputFile(manifest) {
+      return `dist/chrome-quite-black-${manifest.version}.zip`;
+    },
   };
   const chrome2: ArchiveOptions = {
     key: 'chrome2',
     rootDir: 'chrome/actually-quite-black',
-    outputFile: 'dist/chrome-actually-quite-black-__VERSION__.zip',
-    files: [licenseFile, 'manifest.json', 'images/theme_toolbar.png'],
+    files: [licenseFile],
+    outputFile(manifest) {
+      return `dist/chrome-actually-quite-black-${manifest.version}.zip`;
+    },
   };
   const firefox: ArchiveOptions = {
     key: 'firefox',
     rootDir: 'firefox',
-    outputFile: 'dist/firefox-quite-black-__VERSION__.xpi',
-    files: [licenseFile, 'manifest.json'],
+    files: [licenseFile],
+    outputFile(manifest) {
+      return `dist/firefox-quite-black-${manifest.version}.xpi`;
+    },
   };
 
   const themes = [chrome, chrome2, firefox];

@@ -1,6 +1,7 @@
 {
   "name": "quite-black",
   "version": "0.0.0",
+  "private": true,
   "description": "Dark and minimalist theme that is quite black.",
   "homepage": "https://github.com/Arnesfield/quite-black#readme",
   "bugs": {

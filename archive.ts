@@ -152,7 +152,7 @@ async function archive(dryRun: boolean, options: ArchiveOptions) {
 }
 
 function getHelpText() {
-  return 'usage: node archive.ts <chrome|firefox> [-n|--dry-run]';
+  return 'usage: node archive.ts <chrome|chrome2|firefox> [-n|--dry-run]';
 }
 
 async function main(): Promise<number | void> {
@@ -170,6 +170,12 @@ async function main(): Promise<number | void> {
     outputFile: 'dist/chrome-quite-black-__VERSION__.zip',
     files: [licenseFile, 'manifest.json'],
   };
+  const chrome2: ArchiveOptions = {
+    key: 'chrome2',
+    rootDir: 'chrome/actually-quite-black',
+    outputFile: 'dist/chrome-actually-quite-black-__VERSION__.zip',
+    files: [licenseFile, 'manifest.json', 'images/theme_toolbar.png'],
+  };
   const firefox: ArchiveOptions = {
     key: 'firefox',
     rootDir: 'firefox',
@@ -177,7 +183,7 @@ async function main(): Promise<number | void> {
     files: [licenseFile, 'manifest.json'],
   };
 
-  const themes = [chrome, firefox];
+  const themes = [chrome, chrome2, firefox];
   const keysSet = new Set<string>();
   let dryRun = false;
 
@@ -194,6 +200,7 @@ async function main(): Promise<number | void> {
         dryRun = true;
         break;
       case chrome.key:
+      case chrome2.key:
       case firefox.key:
         keysSet.add(arg);
         break;

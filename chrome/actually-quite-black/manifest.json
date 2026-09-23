@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Actually Quite Black",
+  "version": "1.0.0",
+  "description": "Dark and minimalist theme that is actually quite black.",
+  "theme": {
+    "colors": {
+      "background_tab": [0, 0, 0],
+      "background_tab_inactive": [0, 0, 0],
+      "background_tab_incognito": [0, 0, 0],
+      "background_tab_incognito_inactive": [0, 0, 0],
+      "bookmark_text": [255, 255, 255],
+      "frame": [0, 0, 0],
+      "frame_inactive": [0, 0, 0],
+      "frame_incognito": [0, 0, 0],
+      "frame_incognito_inactive": [0, 0, 0],
+      "ntp_background": [0, 0, 0],
+      "ntp_link": [255, 255, 255],
+      "ntp_text": [255, 255, 255],
+      "omnibox_background": [0, 0, 0],
+      "omnibox_text": [255, 255, 255],
+      "tab_background_text": [245, 246, 248],
+      "tab_background_text_inactive": [206, 207, 209],
+      "tab_background_text_incognito": [245, 246, 248],
+      "tab_background_text_incognito_inactive": [206, 207, 209],
+      "tab_text": [255, 255, 255],
+      "toolbar": [0, 0, 0],
+      "toolbar_button_icon": [255, 255, 255],
+      "toolbar_text": [255, 255, 255]
+    },
+    "images": {
+      "theme_toolbar": "images/theme_toolbar.png"
+    }
+  }
+}

@@ -65,35 +65,35 @@ async function archive(dryRun: boolean, options: ArchiveOptions) {
       ? options.outputFile(manifest)
       : options.outputFile;
 
-  // get files to be included in the archive
-  const filePaths = options.files?.slice() || [];
-  filePaths.push(manifestFile);
+  // get unique files to be included in the archive
+  const fileMap: { [archivePath: string]: ArchiveFile } = { __proto__: null! };
 
-  if (
-    typeof manifest.theme?.images === 'object' &&
-    manifest.theme.images !== null &&
-    !Array.isArray(manifest.theme.images)
-  ) {
-    // trust that these are strings
-    filePaths.push(...Object.values(manifest.theme.images));
-  }
-
-  // ensure unique files
-  const files: ArchiveFile[] = [];
-  const fileMap: {
-    [archivePath: string]: ArchiveFile | null | undefined;
-  } = { __proto__: null };
-
-  for (const file of filePaths) {
+  function saveFile(file: string | ArchiveFile) {
     const archiveFile =
       typeof file === 'string' ? toArchiveFile(rootDir, file) : file;
 
-    if (!fileMap[archiveFile.archivePath]) {
-      fileMap[archiveFile.archivePath] = archiveFile;
-      files.push(archiveFile);
-    }
+    fileMap[archiveFile.archivePath] ||= archiveFile;
   }
 
+  for (const file of options.files || []) {
+    saveFile(file);
+  }
+
+  saveFile(manifestFile);
+
+  // trust that these are strings
+  const themeImages =
+    typeof manifest.theme?.images === 'object' &&
+    manifest.theme.images !== null &&
+    !Array.isArray(manifest.theme.images)
+      ? Object.values(manifest.theme.images)
+      : [];
+
+  for (const imagePath of themeImages) {
+    saveFile(imagePath);
+  }
+
+  const files = Object.values(fileMap);
   const filesLengthLength = files.length.toString().length;
 
   const themeInfo = {
